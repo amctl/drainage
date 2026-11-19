@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState, type AnimationEvent } from "react";
+import Link from "next/link";
 import {
   ArrowBigDown,
   ArrowBigUp,
@@ -13,6 +15,9 @@ import {
 
 type ObservationTimelineProps = {
   onClose: () => void;
+  title?: string;
+  place?: string;
+  status?: string;
 };
 
 type Comment = {
@@ -68,39 +73,39 @@ function CommentThread({ comment }: { comment: Comment }) {
   return (
     <li>
       <div className="flex items-start gap-2.5">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold uppercase text-slate-500 ring-1 ring-slate-200">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#e8e2d5] text-[10px] font-bold uppercase text-[#173f3a] ring-1 ring-[#d7d0c0]">
           {comment.author.charAt(0)}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-1.5 text-[11px]">
-            <span className="font-semibold text-gray-700">u/{comment.author}</span>
-            <span className="text-gray-300" aria-hidden="true">
+            <span className="font-semibold text-slate-700">u/{comment.author}</span>
+            <span className="text-slate-300" aria-hidden="true">
               ·
             </span>
-            <span className="text-gray-400">{comment.time}</span>
+            <span className="text-slate-400">{comment.time}</span>
           </div>
-          <p className="mt-1 text-xs leading-5 text-gray-600">{comment.body}</p>
-          <div className="mt-1 flex items-center gap-0.5 text-gray-400">
+          <p className="mt-1 text-xs leading-5 text-slate-600">{comment.body}</p>
+          <div className="mt-1 flex items-center gap-0.5 text-slate-400">
             <button
               type="button"
               aria-label={`Upvote u/${comment.author}`}
-              className="rounded-md p-0.5 transition hover:bg-gray-100 hover:text-blue-600"
+              className="p-0.5 transition hover:bg-[#f3efe5] hover:text-[#65766f]"
             >
               <ArrowBigUp className="size-4" strokeWidth={2} />
             </button>
-            <span className="min-w-4 text-center text-[11px] font-semibold text-gray-600">
+            <span className="min-w-4 text-center text-[11px] font-semibold text-slate-600">
               {comment.score}
             </span>
             <button
               type="button"
               aria-label={`Downvote u/${comment.author}`}
-              className="rounded-md p-0.5 transition hover:bg-gray-100 hover:text-rose-500"
+              className="p-0.5 transition hover:bg-[#f3efe5] hover:text-[#9b6d60]"
             >
               <ArrowBigDown className="size-4" strokeWidth={2} />
             </button>
             <button
               type="button"
-              className="ml-1.5 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold transition hover:bg-gray-100 hover:text-gray-700"
+              className="ml-1.5 inline-flex items-center gap-1 border-b border-transparent px-2 py-1 text-[11px] font-semibold transition hover:border-[#a58e67] hover:text-[#53645e]"
             >
               <MessageCircle className="size-3.5" strokeWidth={2} />
               Reply
@@ -110,7 +115,7 @@ function CommentThread({ comment }: { comment: Comment }) {
       </div>
 
       {comment.replies?.length ? (
-        <ul className="ml-3.5 mt-3 space-y-3 border-l border-gray-200 pl-3.5">
+        <ul className="ml-3.5 mt-3 space-y-3 border-l border-[#d7d0c0] pl-3.5">
           {comment.replies.map((reply) => (
             <CommentThread key={reply.id} comment={reply} />
           ))}
@@ -120,15 +125,65 @@ function CommentThread({ comment }: { comment: Comment }) {
   );
 }
 
-export default function ObservationTimeline({ onClose }: ObservationTimelineProps) {
+export default function ObservationTimeline({
+  onClose,
+  title = "Drainage near residential zone",
+  place = "Delhi · demo location",
+  status = "Needs attention",
+}: ObservationTimelineProps) {
+  const [closing, setClosing] = useState(false);
+  const closeTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+    };
+  }, []);
+
+  const handleClose = () => {
+    if (closing) return;
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const mobile = window.matchMedia("(max-width: 767px)").matches;
+
+    // Sheets only animate on mobile; close immediately elsewhere.
+    if (reduced || !mobile) {
+      onClose();
+      return;
+    }
+
+    setClosing(true);
+    // Fallback in case the exit animation never reports completion.
+    closeTimer.current = window.setTimeout(onClose, 400);
+  };
+
+  const handleExitAnimationEnd = (event: AnimationEvent<HTMLElement>) => {
+    if (!closing || event.target !== event.currentTarget) return;
+    if (event.animationName !== "sheet-out") return;
+    onClose();
+  };
+
   return (
-    <section
-      aria-labelledby="timeline-title"
-      className="absolute bottom-0 left-0 z-30 flex h-[80vh] w-full flex-col overflow-hidden rounded-t-3xl border border-b-0 border-gray-200 bg-white shadow-[0_-12px_40px_-12px_rgba(15,23,42,0.35)] md:static md:h-full md:rounded-none md:border-0 md:shadow-none"
-    >
+    <>
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-hidden="true"
+        onClick={handleClose}
+        className={`fixed inset-0 z-20 bg-[#173f3a]/25 md:hidden ${
+          closing ? "animate-overlay-out" : "animate-overlay-in"
+        }`}
+      />
+      <section
+        aria-labelledby="timeline-title"
+        onAnimationEnd={handleExitAnimationEnd}
+        className={`glass-surface absolute bottom-0 left-0 z-30 flex h-[80dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-white/45 shadow-[0_-12px_40px_-12px_rgba(15,23,42,0.16)] md:static md:h-full md:rounded-none md:border-0 md:shadow-none ${
+          closing ? "animate-sheet-out" : "animate-sheet-in"
+        }`}
+      >
       {/* Drag handle — mobile sheet only */}
       <div
-        className="mx-auto mt-2.5 h-1.5 w-10 shrink-0 rounded-full bg-slate-300 md:hidden"
+        className="mx-auto mt-2.5 h-1 w-10 shrink-0 bg-[#b7aa8f] md:hidden"
         aria-hidden="true"
       />
 
@@ -137,61 +192,61 @@ export default function ObservationTimeline({ onClose }: ObservationTimelineProp
         <div className="flex items-start gap-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Back to evidence lanes"
-            className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/10"
+            className="mt-0.5 flex size-9 shrink-0 items-center justify-center border border-[#d7d4cc] bg-white/60 text-slate-600 transition hover:bg-white/80 hover:text-[#173f3a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a58e67]"
           >
             <ArrowLeft className="size-4" strokeWidth={2.2} />
           </button>
 
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400">
-              Selected area
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+              SAMPLE REPORT · {status.toUpperCase()}
             </p>
             <h2
               id="timeline-title"
-              className="mt-1 text-lg font-bold leading-6 tracking-tight text-gray-900 md:text-xl"
+              className="mt-1 text-lg font-bold leading-6 tracking-tight text-slate-900 md:text-xl"
             >
-              Drainage near residential zone
+              {title}
             </h2>
           </div>
         </div>
 
         {/* Weather context */}
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-sky-100 bg-sky-50 px-3.5 py-2.5 text-sky-700">
+        <div className="mt-4 flex items-center gap-2 bg-[#303b34]/[.04] px-3.5 py-2.5 text-[#454d47]">
           <Cloud className="size-4 shrink-0" strokeWidth={2.2} aria-hidden="true" />
           <p className="min-w-0 text-xs leading-5">
-            <span className="font-semibold">Weather context</span>
-            <span className="mx-2 text-sky-300" aria-hidden="true">
+            <span className="font-semibold">Area context · demo</span>
+            <span className="mx-2 text-[#b7aa8f]" aria-hidden="true">
               |
             </span>
-            <span className="font-medium text-sky-600">IMD context • area-level</span>
+            <span className="font-medium text-slate-600">{place}</span>
           </p>
         </div>
       </div>
 
       {/* Timeline */}
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-1 md:px-0">
-        <ol className="border-l border-slate-200 pl-6">
+        <ol className="border-l border-[#d7d0c0] pl-6">
           {/* Active observation */}
           <li className="relative pb-6">
             <span
-              className="absolute -left-9 top-0 flex size-6 items-center justify-center rounded-full bg-blue-600 ring-4 ring-white"
+              className="absolute -left-9 top-0 flex size-6 items-center justify-center bg-[#9b6d60] ring-4 ring-[#faf9f5]"
               aria-hidden="true"
             >
-              <span className="size-2 rounded-full bg-white" />
+              <span className="size-2 bg-white" />
             </span>
 
             <div className="flex items-start justify-between gap-2">
-              <h3 className="min-w-0 text-sm font-semibold leading-5 text-gray-900">
+              <h3 className="min-w-0 text-sm font-semibold leading-5 text-slate-900">
                 Blocked inlet • citizen report
               </h3>
-              <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
-                Awaiting review
+              <span className="shrink-0 px-2 py-1 text-[10px] font-semibold text-[#756b5b]">
+                Resident report · sample
               </span>
             </div>
 
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-400">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
               <span className="inline-flex items-center gap-1">
                 <Clock className="size-3" aria-hidden="true" />
                 16 Nov 2026 · 09:42
@@ -199,12 +254,12 @@ export default function ObservationTimeline({ onClose }: ObservationTimelineProp
               <span>Updated 16 Nov · 11:05</span>
             </div>
 
-            <p className="mt-2 text-xs leading-5 text-gray-500">
+            <p className="mt-2 text-xs leading-5 text-slate-500">
               Standing water above the kerb. Leaves and silt are blocking the
               stormwater inlet near the residential entrance.
             </p>
 
-            <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+            <div className="mt-3 overflow-hidden border border-[#d7d0c0] bg-[#f3efe5]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=900&q=80"
@@ -213,68 +268,68 @@ export default function ObservationTimeline({ onClose }: ObservationTimelineProp
                 className="h-32 w-full object-cover md:h-36"
               />
             </div>
-            <p className="mt-1.5 text-[10px] text-gray-400">
-              Citizen photo · inlet blocked by leaves and silt
+            <p className="mt-1.5 text-[10px] text-slate-400">
+              Demo image · sample observation, not a live report
             </p>
           </li>
 
           {/* Completed follow-up */}
           <li className="relative pb-6">
             <span
-              className="absolute -left-9 top-0 flex size-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 ring-4 ring-white"
+              className="absolute -left-9 top-0 flex size-6 items-center justify-center bg-[#e2e6df] text-[#64766b] ring-4 ring-[#faf9f5]"
               aria-hidden="true"
             >
               <Check className="size-3.5" strokeWidth={3} />
             </span>
 
             <div className="flex items-start justify-between gap-2">
-              <h3 className="min-w-0 text-sm font-semibold leading-5 text-gray-900">
+              <h3 className="min-w-0 text-sm font-semibold leading-5 text-slate-900">
                 Water receded • follow-up
               </h3>
-              <span className="shrink-0 rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-semibold text-sky-700 ring-1 ring-sky-200">
-                Follow-up noted
+              <span className="shrink-0 px-2 py-1 text-[10px] font-semibold text-[#756b5b]">
+                Resident follow-up · sample
               </span>
             </div>
 
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-400">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
               <span className="inline-flex items-center gap-1">
                 <Clock className="size-3" aria-hidden="true" />
                 16 Nov 2026 · 14:20
               </span>
             </div>
 
-            <p className="mt-2 text-xs leading-5 text-gray-500">
-              The ward team cleared the inlet and the water level returned to
-              normal by the afternoon.
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              A resident follow-up says the water returned to normal. This
+              demo has no agency record to confirm the work.
             </p>
           </li>
 
           {/* Pending authority update */}
           <li className="relative">
             <span
-              className="absolute -left-9 top-0 size-6 rounded-full border-2 border-gray-300 bg-white ring-4 ring-white"
+              className="absolute -left-9 top-0 size-6 border border-[#d7d4cc] bg-[#faf9f5] ring-4 ring-[#faf9f5]"
               aria-hidden="true"
             />
 
             <div className="flex items-start justify-between gap-2">
-              <h3 className="min-w-0 text-sm font-semibold leading-5 text-gray-900">
+              <h3 className="min-w-0 text-sm font-semibold leading-5 text-slate-900">
                 No authority update recorded
               </h3>
-              <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-500 ring-1 ring-gray-200">
+              <span className="shrink-0 px-2 py-1 text-[10px] font-semibold text-slate-500">
                 No update
               </span>
             </div>
 
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-400">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
               <span className="inline-flex items-center gap-1">
                 <Clock className="size-3" aria-hidden="true" />
                 Last checked 16 Nov 2026 · 16:00
               </span>
             </div>
 
-            <p className="mt-2 text-xs leading-5 text-gray-500">
-              No official maintenance record has been linked to this location
-              yet.
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              No official maintenance record is linked in this demo. That does
+              not confirm that no work has taken place.
             </p>
           </li>
         </ol>
@@ -282,16 +337,16 @@ export default function ObservationTimeline({ onClose }: ObservationTimelineProp
         {/* Community discussion */}
         <section
           aria-labelledby="discussion-heading"
-          className="mt-6 border-t border-gray-100 pt-5"
+          className="mt-6 border-t border-slate-100 pt-5"
         >
           <div className="flex items-baseline justify-between gap-3">
             <h3
               id="discussion-heading"
-              className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400"
+              className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400"
             >
               Community discussion
             </h3>
-            <span className="text-[11px] font-medium text-gray-400">
+            <span className="text-[11px] font-medium text-slate-400">
               {COMMENT_COUNT} comments
             </span>
           </div>
@@ -300,7 +355,7 @@ export default function ObservationTimeline({ onClose }: ObservationTimelineProp
             onSubmit={(event) => event.preventDefault()}
             className="mt-3 flex items-start gap-2.5"
           >
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+            <span className="flex size-7 shrink-0 items-center justify-center bg-[#173f3a] text-[10px] font-bold text-white">
               Y
             </span>
             <div className="min-w-0 flex-1">
@@ -311,12 +366,12 @@ export default function ObservationTimeline({ onClose }: ObservationTimelineProp
                 id="timeline-comment"
                 type="text"
                 placeholder="Add a comment…"
-                className="h-9 w-full rounded-full border border-gray-200 bg-gray-50 px-3.5 text-xs text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                className="h-9 w-full border border-[#d7d4cc] bg-white/60 px-3.5 text-xs text-slate-800 outline-none transition placeholder:text-slate-500 focus:border-[#a58e67] focus:bg-white/80 focus:ring-2 focus:ring-[#a58e67]/15"
               />
               <div className="mt-2 flex justify-end">
                 <button
                   type="submit"
-                  className="rounded-full bg-blue-600 px-4 py-1.5 text-[11px] font-semibold text-white shadow-sm shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.98]"
+                  className="bg-[#173f3a] px-4 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#102f2b] active:scale-[0.98]"
                 >
                   Post
                 </button>
@@ -333,19 +388,19 @@ export default function ObservationTimeline({ onClose }: ObservationTimelineProp
       </div>
 
       {/* Budget source */}
-      <div className="shrink-0 border-t border-gray-100 px-5 py-4 md:px-0">
-        <a
-          href="#budget-records"
-          onClick={(event) => event.preventDefault()}
-          className="group flex items-center justify-between gap-3 text-xs font-semibold text-gray-700 transition hover:text-blue-600"
+      <div className="shrink-0 border-t border-slate-100 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-0 md:pb-4">
+        <Link
+          href="/budget"
+          className="group flex items-center justify-between gap-3 text-xs font-semibold text-slate-700 transition hover:text-[#53645e]"
         >
           <span>
             Budget records{" "}
-            <span className="font-normal text-gray-400">• source needed</span>
+            <span className="font-normal text-slate-400">• FY 2025-26</span>
           </span>
-          <ExternalLink className="size-4 shrink-0 text-gray-400 transition group-hover:text-blue-600" />
-        </a>
+          <ExternalLink className="size-4 shrink-0 text-slate-400 transition group-hover:text-[#53645e]" />
+        </Link>
       </div>
     </section>
+    </>
   );
 }

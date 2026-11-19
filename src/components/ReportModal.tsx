@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type AnimationEvent,
+  type ChangeEvent,
+} from "react";
 import {
   AlertCircle,
   Camera,
@@ -25,22 +32,99 @@ export default function ReportModal({ onClose }: ReportModalProps) {
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [closing, setClosing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const closeTimer = useRef<number | null>(null);
+  const onCloseRef = useRef(onClose);
 
-  // Close on Escape.
   useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  const requestClose = useCallback(() => {
+    if (closeTimer.current !== null) return;
+
+    // Respect reduced motion: skip the exit animation and close immediately.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onCloseRef.current();
+      return;
+    }
+
+    setClosing(true);
+    // Fallback in case the exit animation never reports completion.
+    closeTimer.current = window.setTimeout(() => onCloseRef.current(), 400);
+  }, []);
+
+  const handleExitAnimationEnd = (event: AnimationEvent<HTMLDivElement>) => {
+    if (!closing || event.target !== panelRef.current) return;
+    if (event.animationName !== "modal-out") return;
+    onCloseRef.current();
+  };
+
+  // Focus management, scroll lock and keyboard handling for the dialog.
+  useEffect(() => {
+    const node = panelRef.current;
+    const previous =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const bodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    node?.focus();
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        requestClose();
+        return;
+      }
+
+      if (event.key !== "Tab" || !node) return;
+
+      const focusables = Array.from(
+        node.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((element) => element.getClientRects().length > 0);
+
+      if (focusables.length === 0) {
+        event.preventDefault();
+        node.focus();
+        return;
+      }
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+
+      if (
+        event.shiftKey &&
+        (document.activeElement === first || document.activeElement === node)
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
 
-  // Cancel any in-flight verification when the modal closes.
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = bodyOverflow;
+      previous?.focus();
+    };
+  }, [requestClose]);
+
+  // Cancel in-flight verification and pending close timers on unmount.
   useEffect(() => {
-    return () => abortRef.current?.abort();
+    return () => {
+      if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+      abortRef.current?.abort();
+    };
   }, []);
 
   // Release the preview object URL when it changes or the modal closes.
@@ -82,7 +166,7 @@ export default function ReportModal({ onClose }: ReportModalProps) {
       }
 
       setPhase("success");
-      setMessage(payload?.message ?? "Photo verified. GPS and duplicate checks passed.");
+      setMessage(payload?.message ?? "Demo checks passed. Nothing has been published.");
     } catch (error) {
       if (controller.signal.aborted) return;
       setPhase("error");
@@ -97,22 +181,34 @@ export default function ReportModal({ onClose }: ReportModalProps) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-hidden="true"
+        onClick={requestClose}
+        className={`absolute inset-0 bg-[#173f3a]/55 ${
+          closing ? "animate-overlay-out" : "animate-overlay-in"
+        }`}
+      />
+
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="report-modal-title"
-        className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/5"
+        aria-describedby="report-modal-description"
+        aria-busy={phase === "verifying"}
+        tabIndex={-1}
+        onAnimationEnd={handleExitAnimationEnd}
+        className={`glass-dialog relative flex max-h-[90dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl outline-none ${
+          closing ? "animate-modal-out" : "animate-modal-in"
+        }`}
       >
         {/* Header */}
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-gray-100 px-5 py-4">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#e4dfd1] px-5 py-4">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+            <span className="flex size-9 shrink-0 items-center justify-center bg-[#173f3a] text-[#f2b544]">
               <Camera className="size-4.5" strokeWidth={2.2} />
             </span>
             <div className="min-w-0">
@@ -122,17 +218,20 @@ export default function ReportModal({ onClose }: ReportModalProps) {
               >
                 Report a drainage issue
               </h2>
-              <p className="mt-0.5 text-xs leading-5 text-slate-500">
-                Take a photo and we&apos;ll verify the location before publishing.
+              <p
+                id="report-modal-description"
+                className="mt-0.5 text-xs leading-5 text-slate-500"
+              >
+                Add a photo to try the demo checks. Reports are not sent to an authority.
               </p>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             aria-label="Close report dialog"
-            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/10"
+            className="flex size-8 shrink-0 items-center justify-center text-slate-500 transition hover:bg-[#f3efe5] hover:text-[#173f3a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a58e67]"
           >
             <X className="size-4" strokeWidth={2.2} />
           </button>
@@ -150,7 +249,7 @@ export default function ReportModal({ onClose }: ReportModalProps) {
           />
 
           {preview ? (
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+            <div className="overflow-hidden border border-[#d7d0c0] bg-[#f3efe5]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={preview}
@@ -159,13 +258,13 @@ export default function ReportModal({ onClose }: ReportModalProps) {
               />
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center">
-              <span className="flex size-12 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm ring-1 ring-slate-200">
+            <div className="flex flex-col items-center justify-center gap-2 bg-[#303b34]/[.045] px-4 py-8 text-center">
+              <span className="flex size-12 items-center justify-center bg-[#e9e6df] text-[#65766f]">
                 <Camera className="size-6" strokeWidth={1.8} />
               </span>
               <p className="text-sm font-semibold text-slate-700">Add a photo</p>
               <p className="max-w-60 text-xs leading-5 text-slate-500">
-                Your camera will open with GPS tagging enabled.
+                Location metadata is simulated in this demo.
               </p>
             </div>
           )}
@@ -174,7 +273,7 @@ export default function ReportModal({ onClose }: ReportModalProps) {
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={phase === "verifying"}
-            className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+            className="mt-3 flex h-11 w-full items-center justify-center gap-2 bg-[#173f3a] text-sm font-semibold text-white transition hover:bg-[#102f2b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b09b73] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
           >
             <Camera className="size-4.5" strokeWidth={2.2} />
             {preview ? "Retake photo" : "Take or choose a photo"}
@@ -183,11 +282,11 @@ export default function ReportModal({ onClose }: ReportModalProps) {
           {phase === "verifying" && (
             <div
               role="status"
-              className="mt-4 flex items-center gap-2.5 rounded-xl border border-blue-100 bg-blue-50 px-3.5 py-3 text-blue-700"
+              className="mt-4 flex items-center gap-2.5 bg-[#65766f]/[.08] px-3.5 py-3 text-[#53645e]"
             >
               <Loader2 className="size-4 shrink-0 animate-spin" strokeWidth={2.2} />
               <p className="text-xs font-medium">
-                Verifying GPS &amp; checking duplicates...
+                Running simulated location &amp; duplicate checks...
               </p>
             </div>
           )}
@@ -195,7 +294,7 @@ export default function ReportModal({ onClose }: ReportModalProps) {
           {phase === "error" && (
             <div
               role="alert"
-              className="mt-4 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-red-700"
+              className="mt-4 flex items-start gap-2.5 bg-[#9b6d60]/[.08] px-3.5 py-3 text-[#76564d]"
             >
               <AlertCircle className="mt-0.5 size-4 shrink-0" strokeWidth={2.2} />
               <p className="text-xs font-medium leading-5">{message}</p>
@@ -206,15 +305,15 @@ export default function ReportModal({ onClose }: ReportModalProps) {
             <div className="mt-4 space-y-3">
               <div
                 role="status"
-                className="flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-emerald-700"
+                className="flex items-start gap-2.5 bg-[#65766f]/[.08] px-3.5 py-3 text-[#53645e]"
               >
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0" strokeWidth={2.2} />
                 <p className="text-xs font-medium leading-5">{message}</p>
               </div>
 
               {submitted && (
-                <p className="text-center text-[11px] leading-5 text-emerald-700">
-                  Mock submission complete — nothing was sent to the authority yet.
+                <p className="text-center text-[11px] leading-5 text-[#53645e]">
+                  Demo complete — nothing was sent to the authority.
                 </p>
               )}
             </div>
@@ -222,21 +321,21 @@ export default function ReportModal({ onClose }: ReportModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-gray-100 px-5 py-3">
+        <div className="shrink-0 border-t border-[#e4dfd1] px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {phase === "success" ? (
             <button
               type="button"
               onClick={() => setSubmitted(true)}
               disabled={submitted}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition hover:bg-emerald-700 active:scale-[0.99] disabled:cursor-default disabled:bg-emerald-700"
+              className="flex h-11 w-full items-center justify-center gap-2 bg-[#53645e] text-sm font-semibold text-white transition hover:bg-[#3e4d47] disabled:cursor-default disabled:bg-[#65766f]"
             >
               {submitted ? (
                 <>
                   <CheckCircle2 className="size-4.5" strokeWidth={2.2} />
-                  Report submitted
+                  Demo complete
                 </>
               ) : (
-                "Submit Report"
+                "Complete demo submission"
               )}
             </button>
           ) : (

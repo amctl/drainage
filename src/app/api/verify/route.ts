@@ -46,6 +46,6 @@ export async function POST(request: Request) {
 
   return Response.json({
     success: true,
-    message: "Verified successfully!",
+    message: "Demo checks passed. Nothing has been published.",
   });
 }

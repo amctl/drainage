@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fffdf7;
+  --foreground: #173f3a;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -12,15 +13,264 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Groundwork's glass layer: translucent paper over the live map. */
+.glass-surface {
+  background: rgb(250 249 245 / 78%);
+  -webkit-backdrop-filter: blur(24px) saturate(125%);
+  backdrop-filter: blur(24px) saturate(125%);
+  box-shadow: 0 20px 60px rgb(22 35 31 / 11%), inset 0 1px 0 rgb(255 255 255 / 65%);
+}
+
+.glass-dialog {
+  background: rgb(250 249 245 / 88%);
+  -webkit-backdrop-filter: blur(30px) saturate(125%);
+  backdrop-filter: blur(30px) saturate(125%);
+  box-shadow: 0 30px 90px rgb(15 23 42 / 24%), inset 0 1px 0 rgb(255 255 255 / 72%);
+}
+
+.report-card {
+  animation: report-in 260ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  background: rgb(255 255 255 / 54%);
+  box-shadow: inset 0 -1px 0 rgb(40 48 42 / 8%);
+  transition: background-color 160ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.report-card:nth-child(2) { animation-delay: 35ms; }
+.report-card:nth-child(3) { animation-delay: 70ms; }
+.report-card:nth-child(4) { animation-delay: 105ms; }
+.report-card:nth-child(5) { animation-delay: 140ms; }
+
+.budget-card {
+  animation: report-in 280ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.budget-card:hover {
+  box-shadow: 0 14px 34px rgb(22 35 31 / 9%);
+  transform: translateY(-2px);
+}
+
+.report-card:hover {
+  background: rgb(255 255 255 / 82%);
+  box-shadow: inset 0 -1px 0 rgb(40 48 42 / 8%), 0 8px 24px rgb(22 35 31 / 8%);
+  transform: translateY(-2px);
+}
+
+.report-card.is-selected {
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 10px 30px rgb(22 35 31 / 9%);
+}
+
+.budget-card.is-active {
+  background: rgb(255 255 255 / 82%);
+}
+
+.map-marker-enter {
+  animation: marker-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.selected-marker {
+  animation: marker-selected 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.glass-enter {
+  animation: glass-in 320ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.vote-button:active {
+  transform: scale(0.88);
+}
+
+.vote-button[aria-pressed="true"] {
+  animation: vote-nudge 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes glass-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes report-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes marker-in {
+  from { opacity: 0; transform: scale(0.65); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes marker-selected {
+  0% { transform: scale(0.85); }
+  65% { transform: scale(1.24); }
+  100% { transform: scale(1.12); }
+}
+
+@keyframes vote-nudge {
+  0% { transform: scale(0.8); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  overscroll-behavior-y: none;
+  touch-action: manipulation;
+}
+
+/* Motion primitives — shared by sheets, modals and page transitions. */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes sheet-out {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes modal-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.98);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-overlay-in {
+  animation: overlay-in 200ms ease-out both;
+}
+
+.animate-overlay-out {
+  animation: overlay-out 160ms ease-in both;
+}
+
+/* Sheets only animate on mobile — desktop renders them inline in the sidebar. */
+@media (max-width: 767px) {
+  .animate-sheet-in {
+    animation: sheet-in 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+
+  .animate-sheet-out {
+    animation: sheet-out 240ms cubic-bezier(0.4, 0, 1, 1) both;
+  }
+}
+
+.animate-modal-in {
+  animation: modal-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-modal-out {
+  animation: modal-out 150ms ease-in both;
+}
+
+.animate-page-in {
+  animation: page-in 200ms ease-out both;
+}
+
+.animate-rise-in {
+  animation: rise-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-overlay-in,
+  .animate-overlay-out,
+  .animate-sheet-in,
+  .animate-sheet-out,
+  .animate-modal-in,
+  .animate-modal-out,
+  .animate-page-in,
+  .animate-rise-in {
+    animation: none !important;
+  }
+
+  .glass-enter,
+  .report-card,
+  .budget-card,
+  .map-marker-enter,
+  .selected-marker {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .vote-button[aria-pressed="true"] {
+    animation: none !important;
+  }
+
+  .report-card:hover,
+  .budget-card:hover,
+  .vote-button:active {
+    transform: none !important;
+  }
 }
