@@ -87,9 +87,16 @@ Applicant:
 Signature: ______________________`;
 }
 
+type SourceLink = {
+  url: string;
+  label: string;
+  status: "pending" | "verified" | "error";
+};
+
 export default function BudgetPage() {
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [sourceLinks, setSourceLinks] = useState<Record<string, SourceLink>>({});
   const panelRef = useRef<HTMLDivElement>(null);
 
   const activeZone = ZONES.find((zone) => zone.id === activeZoneId) ?? null;
@@ -210,6 +217,34 @@ export default function BudgetPage() {
                     </div>
                   </div>
 
+                  {/* Source link status */}
+                  {sourceLinks[zone.id] ? (
+                    <div className="mt-2 flex items-center gap-2 text-xs">
+                      {sourceLinks[zone.id].status === "pending" && (
+                        <span className="text-slate-500">Source link pending</span>
+                      )}
+                      {sourceLinks[zone.id].status === "verified" && (
+                        <span className="text-green-600">Source linked</span>
+                      )}
+                      {sourceLinks[zone.id].status === "error" && (
+                        <span className="text-red-600">Source link error</span>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSourceLinks((links) => ({
+                          ...links,
+                          [zone.id]: { url: "", label: "", status: "pending" },
+                        }))
+                      }
+                      className="mt-2 text-[10px] font-medium text-slate-400 underline underline-offset-2 hover:text-slate-600"
+                    >
+                      Add source link
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => {
@@ -302,6 +337,115 @@ export default function BudgetPage() {
             </div>
           </section>
         )}
+
+        {/* Source link manager */}
+        {activeZoneId && (
+          <section
+            key={activeZoneId}
+            aria-labelledby="source-link-heading"
+            className="glass-surface animate-rise-in mt-4 scroll-mt-4 rounded-2xl p-4 shadow-sm md:mt-8 md:p-6"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 id="source-link-heading" className="text-base font-bold tracking-tight text-slate-900">
+                  Source link for {activeZone?.name ?? "Zone"}
+                </h2>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Attach a source link before publishing budget figures as factual information.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveZoneId(null)}
+                aria-label="Close source link manager"
+                className="text-slate-500 transition hover:bg-[#f3efe5] hover:text-[#173f3a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a58e67]"
+              >
+                <X aria-hidden="true" />
+              </button>
+            </div>
+
+            {sourceLinks[activeZoneId] && sourceLinks[activeZoneId].status !== "pending" ? (
+              <div className="mt-3 flex items-center gap-2">
+                <a
+                  href={sourceLinks[activeZoneId].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-500 underline underline-offset-2 hover:text-slate-600"
+                >
+                  {sourceLinks[activeZoneId].label || "View source"}
+                </a>
+                <span className="text-green-600">✓ Verified</span>
+              </div>
+            ) : (
+              <div className="mt-3 space-y-2">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const url = (e.target as HTMLFormElement).elements.namedItem("source-url") as HTMLInputElement;
+                    const label = (e.target as HTMLFormElement).elements.namedItem("source-label") as HTMLInputElement;
+                    setSourceLinks((links) => ({
+                      ...links,
+                      [activeZoneId!]: {
+                        url: url.value,
+                        label: label.value || "Source",
+                        status: "verified",
+                      },
+                    }));
+                    url.value = "";
+                    label.value = "";
+                  }}
+                >
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                    <div>
+                      <label className="block text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500 mb-1">
+                        Source URL
+                      </label>
+                      <input
+                        type="url"
+                        name="source-url"
+                        required
+                        className="w-full rounded-border border-border bg-white/20 p-2 text-sm text-slate-200 outline-none placeholder:text-slate-400 focus:border-[a58e67] focus:ring-[a58e67]/15"
+                        placeholder="https://example.gov.in/..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500 mb-1">
+                        Link label
+                      </label>
+                      <input
+                        type="text"
+                        name="source-label"
+                        className="w-full rounded-border border-border bg-white/20 p-2 text-sm text-slate-200 outline-none placeholder:text-slate-400 focus:border-[a58e67] focus:ring-[a58e67]/15"
+                        placeholder="MCD budget order"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSourceLinks((links) => ({
+                          ...links,
+                          [activeZoneId!]: { url: "", label: "", status: "error" },
+                        }))
+                      }
+                      className="flex h-9 items-center gap-1.5 border border-border bg-white/60 px-2.5 text-[11px] font-semibold text-slate-400 transition hover:bg-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a58e67]"
+                    >
+                      <X className="size-3.5" strokeWidth={2.4} />
+                      Cancel
+                    </button>
+                    <button type="submit" className="flex h-9 items-center gap-1.5 border border-[#173f3a] px-2.5 text-[11px] font-semibold text-[#173f3a] transition hover:bg-[#0d322d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a58e67]">
+                      <Check className="size-3.5" strokeWidth={2.2} />
+                      Save source
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+          </section>
+        )}
+
       </div>
     </div>
   );

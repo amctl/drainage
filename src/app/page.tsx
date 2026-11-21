@@ -50,6 +50,7 @@ export default function Home() {
   const [votes, setVotes] = useState<Record<string, -1 | 0 | 1>>({});
   const [reportOpen, setReportOpen] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
+  const [focusSearch, setFocusSearch] = useState(false);
   const mapRef = useRef<MapRef>(null);
 
   const visibleReports = useMemo(() => {
@@ -92,6 +93,34 @@ export default function Home() {
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
   }, [view]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Cmd/Ctrl + R: open report modal
+      if ((event.metaKey || event.ctrlKey) && event.key === "r") {
+        event.preventDefault();
+        setReportOpen(true);
+      }
+
+      // Cmd/Ctrl + K: focus search
+      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
+        event.preventDefault();
+        setFocusSearch(true);
+        const searchInput = document.querySelector('input[placeholder="Search streets or reports"]') as HTMLInputElement | null;
+        if (searchInput) searchInput.focus();
+      }
+
+      // Escape: close modals
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setReportOpen(false);
+        setTimelineOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [setReportOpen, setFocusSearch, view]);
 
   function locateReport(report: Report) {
     setSelectedId(report.id);
@@ -159,7 +188,7 @@ export default function Home() {
         <div className="header-actions">
           <Link href="/budget" className="budget-link"><span>Budget</span><ExternalLink aria-hidden="true" /></Link>
           <button type="button" onClick={() => setReportOpen(true)} className="report-action"><Camera aria-hidden="true" /><span>Report an issue</span></button>
-          <span className="demo-pill">DEMO</span>
+          <span className="demo-pill">DEMO · not verified</span>
         </div>
       </header>
 
@@ -171,7 +200,7 @@ export default function Home() {
                 <div className="context-topline"><span className={`status-indicator ${statusClass(selectedReport.status)}`} />{selectedReport.status}<span className="context-kind">{selectedReport.kind}</span></div>
                 <h1>{selectedReport.title}</h1>
                 <p className="context-place"><MapPin aria-hidden="true" />{selectedReport.place}<span>·</span><Clock3 aria-hidden="true" />{selectedReport.time}</p>
-                <p className="context-source">{selectedReport.source}{selectedReport.source === "Sample agency update" ? " · source not linked" : " · demo post"}</p>
+                <p className={`context-source ${selectedReport.source === "Sample agency update" ? "demo-source" : "verified-source"}`}>{selectedReport.source}{selectedReport.source === "Sample agency update" ? " · source not linked" : " · demo post"}</p>
                 <div className="context-actions">
                   <button type="button" onClick={() => setView("community")}><MessageCircle aria-hidden="true" />View in community</button>
                   <button type="button" className="context-clear" onClick={() => setSelectedId(null)} aria-label="Clear selected report"><X aria-hidden="true" /></button>
@@ -207,7 +236,7 @@ export default function Home() {
                 <p>Delhi drainage reports, resident follow-ups, and sample works updates.</p>
               </div>
             </div>
-            <span className="community-status"><ShieldAlert aria-hidden="true" />Demo community · not verified</span>
+            <span className="community-status"><ShieldAlert aria-hidden="true" />Demo community <span className="demo-source">· not verified</span></span>
           </div>
 
           <div className="community-layout">
@@ -251,7 +280,7 @@ export default function Home() {
                         <div className="post-title-row"><span className={`status-indicator ${statusClass(report.status)}`} /><span className="post-status">{report.status}</span><span className="post-kind">{report.kind}</span></div>
                         <h2><button type="button" onClick={() => locateReport(report)}>{report.title}</button></h2>
                         <p className="post-place"><MapPin aria-hidden="true" />{report.place}</p>
-                        <p className="post-source">{report.source}{report.source === "Sample agency update" ? " · source not linked" : " · demo post"}</p>
+                        <p className={`post-source ${report.source === "Sample agency update" ? "demo-source" : "verified-source"}`}>{report.source}{report.source === "Sample agency update" ? " · source not linked" : " · demo post"}</p>
                         {report.photo && <p className="post-attachment"><Camera aria-hidden="true" />Demo photo attached · preview unavailable</p>}
                         {report.status !== "Needs attention" && <p className="post-followup"><Check aria-hidden="true" />{report.status === "Resolved" ? "Sample completion · resident confirmation pending" : "Resident follow-up · sample record"}</p>}
                         <div className="post-actions">
