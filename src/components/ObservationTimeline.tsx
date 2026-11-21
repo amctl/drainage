@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, type AnimationEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   ArrowBigDown,
   ArrowBigUp,
   ArrowLeft,
+  Camera,
   Check,
+  ChevronDown,
   Clock,
   Cloud,
   ExternalLink,
@@ -64,62 +67,64 @@ const COMMENTS: Comment[] = [
   },
 ];
 
-const COMMENT_COUNT = COMMENTS.reduce(
-  (total, comment) => total + 1 + (comment.replies?.length ?? 0),
-  0
-);
-
-function CommentThread({ comment }: { comment: Comment }) {
+function CommentThread({ comment, votes, onVote, onReply }: { comment: Comment; votes: Record<string, -1 | 0 | 1>; onVote: (id: string, direction: -1 | 1) => void; onReply: (id: string, author: string) => void }) {
+  const vote = votes[comment.id] ?? 0;
+  const [repliesOpen, setRepliesOpen] = useState(true);
   return (
-    <li>
-      <div className="flex items-start gap-2.5">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#e8e2d5] text-[10px] font-bold uppercase text-[#173f3a] ring-1 ring-[#d7d0c0]">
-          {comment.author.charAt(0)}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-1.5 text-[11px]">
-            <span className="font-semibold text-slate-700">u/{comment.author}</span>
-            <span className="text-slate-300" aria-hidden="true">
-              ·
-            </span>
-            <span className="text-slate-400">{comment.time}</span>
-          </div>
-          <p className="mt-1 text-xs leading-5 text-slate-600">{comment.body}</p>
-          <div className="mt-1 flex items-center gap-0.5 text-slate-400">
+    <li className="min-w-0">
+      <article className="flex items-start gap-2.5 sm:gap-3">
+        <div role="group" aria-label={`Vote score ${comment.score + vote}`} className="flex shrink-0 flex-col items-center rounded-xl bg-[#edf3f3] py-1 text-[#526966]">
             <button
               type="button"
               aria-label={`Upvote u/${comment.author}`}
-              className="p-0.5 transition hover:bg-[#f3efe5] hover:text-[#65766f]"
+              aria-pressed={vote === 1}
+              onClick={() => onVote(comment.id, 1)}
+              className={`vote-button flex size-8 items-center justify-center rounded-lg transition hover:bg-[#dcebea] hover:text-[#126357] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#477c75] ${vote === 1 ? "text-[#126357]" : ""}`}
             >
-              <ArrowBigUp className="size-4" strokeWidth={2} />
+              <ArrowBigUp className="size-[18px]" strokeWidth={2.4} />
             </button>
-            <span className="min-w-4 text-center text-[11px] font-semibold text-slate-600">
-              {comment.score}
+            <span className="min-w-8 text-center text-[11px] font-bold tabular-nums text-[#344b48]" aria-live="polite">
+              {comment.score + vote}
             </span>
             <button
               type="button"
               aria-label={`Downvote u/${comment.author}`}
-              className="p-0.5 transition hover:bg-[#f3efe5] hover:text-[#9b6d60]"
+              aria-pressed={vote === -1}
+              onClick={() => onVote(comment.id, -1)}
+              className={`vote-button flex size-8 items-center justify-center rounded-lg transition hover:bg-[#f2e7e4] hover:text-[#9b493e] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#477c75] ${vote === -1 ? "text-[#9b493e]" : ""}`}
             >
-              <ArrowBigDown className="size-4" strokeWidth={2} />
+              <ArrowBigDown className="size-[18px]" strokeWidth={2.4} />
             </button>
+        </div>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <div className="flex min-h-8 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px]">
+            <span className="flex size-6 items-center justify-center rounded-full bg-[#dce9e8] text-[9px] font-bold uppercase text-[#173f3a]" aria-hidden="true">{comment.author.charAt(0)}</span>
+            <span className="font-bold text-[#263b3a]">u/{comment.author}</span>
+            <span className="text-[#758784]" aria-hidden="true">·</span>
+            <span className="text-[#607574]">{comment.time === "now" ? "just now" : `${comment.time} ago`}</span>
+          </div>
+          <p className="mt-1 text-[13px] leading-[1.6] text-[#344b48]">{comment.body}</p>
+          <div className="mt-2 flex min-h-8 flex-wrap items-center gap-1 text-[#536a67]">
             <button
               type="button"
-              className="ml-1.5 inline-flex items-center gap-1 border-b border-transparent px-2 py-1 text-[11px] font-semibold transition hover:border-[#a58e67] hover:text-[#53645e]"
+              onClick={() => { setRepliesOpen(true); onReply(comment.id, comment.author); }}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold transition hover:bg-[#e7efef] hover:text-[#173f3a] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#477c75]"
             >
               <MessageCircle className="size-3.5" strokeWidth={2} />
               Reply
             </button>
           </div>
         </div>
-      </div>
+      </article>
 
       {comment.replies?.length ? (
-        <ul className="ml-3.5 mt-3 space-y-3 border-l border-[#d7d0c0] pl-3.5">
-          {comment.replies.map((reply) => (
-            <CommentThread key={reply.id} comment={reply} />
-          ))}
-        </ul>
+        <div className="ml-[15px] mt-1 border-l-2 border-[#d7e2e1] pl-3 sm:ml-[17px] sm:pl-4">
+          <button type="button" aria-expanded={repliesOpen} onClick={() => setRepliesOpen((open) => !open)} className="mb-2 inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-[11px] font-bold text-[#536a67] transition hover:bg-[#e7efef] hover:text-[#173f3a] focus-visible:outline-2 focus-visible:outline-[#477c75]">
+            <ChevronDown className={`size-3.5 transition-transform ${repliesOpen ? "" : "-rotate-90"}`} aria-hidden="true" />
+            {repliesOpen ? `Hide ${comment.replies.length} ${comment.replies.length === 1 ? "reply" : "replies"}` : `View ${comment.replies.length} ${comment.replies.length === 1 ? "reply" : "replies"}`}
+          </button>
+          {repliesOpen && <ul className="space-y-4 pb-1">{comment.replies.map((reply) => <CommentThread key={reply.id} comment={reply} votes={votes} onVote={onVote} onReply={onReply} />)}</ul>}
+        </div>
       ) : null}
     </li>
   );
@@ -131,70 +136,70 @@ export default function ObservationTimeline({
   place = "Delhi · demo location",
   status = "Needs attention",
 }: ObservationTimelineProps) {
-  const [closing, setClosing] = useState(false);
-  const closeTimer = useRef<number | null>(null);
+  const [comments, setComments] = useState(COMMENTS);
+  const [votes, setVotes] = useState<Record<string, -1 | 0 | 1>>({});
+  const [draft, setDraft] = useState("");
+  const [replyingTo, setReplyingTo] = useState<{ id: string; author: string } | null>(null);
+  const [posted, setPosted] = useState(false);
+  const [commentSort, setCommentSort] = useState<"Relevance" | "Top" | "New">("Relevance");
+  const [commentSortMenuOpen, setCommentSortMenuOpen] = useState(false);
+  const commentInput = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    return () => {
-      if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+  const handleVote = (id: string, direction: -1 | 1) => {
+    setVotes((current) => ({ ...current, [id]: current[id] === direction ? 0 : direction }));
+  };
+
+  const handleReply = (id: string, author: string) => {
+    setReplyingTo({ id, author });
+    commentInput.current?.focus();
+  };
+
+  const handleCommentSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const body = draft.trim();
+    if (!body) return;
+    const id = `local-${Date.now()}`;
+    const newComment: Comment = {
+      id,
+      author: "you",
+      time: "now",
+      score: 0,
+      body,
     };
-  }, []);
-
-  const handleClose = () => {
-    if (closing) return;
-
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const mobile = window.matchMedia("(max-width: 767px)").matches;
-
-    // Sheets only animate on mobile; close immediately elsewhere.
-    if (reduced || !mobile) {
-      onClose();
-      return;
+    if (replyingTo) {
+      const addReply = (items: Comment[]): Comment[] => items.map((item) => item.id === replyingTo.id
+        ? { ...item, replies: [...(item.replies ?? []), newComment] }
+        : { ...item, replies: item.replies ? addReply(item.replies) : undefined });
+      setComments((current) => addReply(current));
+    } else {
+      setComments((current) => [newComment, ...current]);
     }
-
-    setClosing(true);
-    // Fallback in case the exit animation never reports completion.
-    closeTimer.current = window.setTimeout(onClose, 400);
+    setDraft("");
+    setReplyingTo(null);
+    setPosted(true);
+    window.setTimeout(() => setPosted(false), 2500);
   };
 
-  const handleExitAnimationEnd = (event: AnimationEvent<HTMLElement>) => {
-    if (!closing || event.target !== event.currentTarget) return;
-    if (event.animationName !== "sheet-out") return;
-    onClose();
-  };
+  const sortedComments = [...comments].sort((a, b) => {
+    const ageMinutes = (time: string) => time === "now" ? 0 : Number.parseInt(time, 10) * (time.endsWith("d") ? 1440 : 60);
+    if (commentSort === "New") return ageMinutes(a.time) - ageMinutes(b.time);
+    if (commentSort === "Top") return (b.score + (votes[b.id] ?? 0)) - (a.score + (votes[a.id] ?? 0));
+    return ((b.score + (votes[b.id] ?? 0)) / Math.max(1, ageMinutes(b.time))) - ((a.score + (votes[a.id] ?? 0)) / Math.max(1, ageMinutes(a.time)));
+  });
 
   return (
-    <>
-      <button
-        type="button"
-        tabIndex={-1}
-        aria-hidden="true"
-        onClick={handleClose}
-        className={`fixed inset-0 z-20 bg-[#173f3a]/25 md:hidden ${
-          closing ? "animate-overlay-out" : "animate-overlay-in"
-        }`}
-      />
       <section
         aria-labelledby="timeline-title"
-        onAnimationEnd={handleExitAnimationEnd}
-        className={`glass-surface absolute bottom-0 left-0 z-30 flex h-[80dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-white/45 shadow-[0_-12px_40px_-12px_rgba(15,23,42,0.16)] md:static md:h-full md:rounded-none md:border-0 md:shadow-none ${
-          closing ? "animate-sheet-out" : "animate-sheet-in"
-        }`}
+        className="timeline-panel glass-surface relative flex w-full min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-white/70 shadow-[0_18px_46px_rgba(20,38,34,0.10)]"
       >
-      {/* Drag handle — mobile sheet only */}
-      <div
-        className="mx-auto mt-2.5 h-1 w-10 shrink-0 bg-[#b7aa8f] md:hidden"
-        aria-hidden="true"
-      />
-
       {/* Header and context */}
-      <div className="shrink-0 px-5 pb-4 pt-3 md:px-0 md:pt-0">
+      <div className="timeline-context shrink-0 border-b border-[#d7e1e1] px-5 pb-4 pt-5">
         <div className="flex items-start gap-3">
           <button
             type="button"
-            onClick={handleClose}
-            aria-label="Back to evidence lanes"
-            className="mt-0.5 flex size-9 shrink-0 items-center justify-center border border-[#d7d4cc] bg-white/60 text-slate-600 transition hover:bg-white/80 hover:text-[#173f3a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a58e67]"
+            onClick={onClose}
+            aria-label="Back to posts"
+            className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#d7e1e1] bg-white/70 text-[#536a67] transition hover:bg-white hover:text-[#173f3a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#477c75]"
           >
             <ArrowLeft className="size-4" strokeWidth={2.2} />
           </button>
@@ -213,7 +218,7 @@ export default function ObservationTimeline({
         </div>
 
         {/* Weather context */}
-        <div className="mt-4 flex items-center gap-2 bg-[#303b34]/[.04] px-3.5 py-2.5 text-[#454d47]">
+        <div className="timeline-weather-context mt-4 flex items-center gap-2 bg-[#303b34]/[.04] px-3.5 py-2.5 text-[#454d47]">
           <Cloud className="size-4 shrink-0" strokeWidth={2.2} aria-hidden="true" />
           <p className="min-w-0 text-xs leading-5">
             <span className="font-semibold">Area context · demo</span>
@@ -226,169 +231,109 @@ export default function ObservationTimeline({
       </div>
 
       {/* Timeline */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-1 md:px-0">
-        <ol className="border-l border-[#d7d0c0] pl-6">
-          {/* Active observation */}
-          <li className="relative pb-6">
-            <span
-              className="absolute -left-9 top-0 flex size-6 items-center justify-center bg-[#9b6d60] ring-4 ring-[#faf9f5]"
-              aria-hidden="true"
-            >
-              <span className="size-2 bg-white" />
-            </span>
-
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="min-w-0 text-sm font-semibold leading-5 text-slate-900">
-                Blocked inlet • citizen report
-              </h3>
-              <span className="shrink-0 px-2 py-1 text-[10px] font-semibold text-[#756b5b]">
-                Resident report · sample
-              </span>
+      <div className="timeline-body grid min-h-0 flex-1 px-5 pb-3 pt-1 sm:px-6">
+        <section className="timeline-activity" aria-labelledby="activity-heading">
+          <div className="timeline-activity-heading">
+            <h3 id="activity-heading">Report activity</h3>
+            <span>2 resident updates · no agency record</span>
+          </div>
+          <ol className="timeline-progress-list" aria-label="Report progress">
+          <li className="activity-step">
+            <span className="activity-marker activity-marker-recorded" aria-hidden="true"><Check /></span>
+            <div className="activity-step-content">
+              <div className="activity-step-title"><h4>Report logged</h4><span>Resident report · sample</span></div>
+              <div className="activity-step-meta"><Clock aria-hidden="true" />16 Nov · 09:42 <span>Updated 11:05</span></div>
+              <p>Standing water above the kerb. Leaves and silt are blocking the stormwater inlet near the residential entrance.</p>
+              <div className="activity-evidence-placeholder" role="img" aria-label="Demo photo attached; preview unavailable">
+                <Camera aria-hidden="true" />
+                <span>Demo photo attached</span>
+                <small>Preview unavailable</small>
+              </div>
             </div>
-
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
-              <span className="inline-flex items-center gap-1">
-                <Clock className="size-3" aria-hidden="true" />
-                16 Nov 2026 · 09:42
-              </span>
-              <span>Updated 16 Nov · 11:05</span>
-            </div>
-
-            <p className="mt-2 text-xs leading-5 text-slate-500">
-              Standing water above the kerb. Leaves and silt are blocking the
-              stormwater inlet near the residential entrance.
-            </p>
-
-            <div className="mt-3 overflow-hidden border border-[#d7d0c0] bg-[#f3efe5]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=900&q=80"
-                alt="Blocked drain inlet surrounded by standing water"
-                loading="lazy"
-                className="h-32 w-full object-cover md:h-36"
-              />
-            </div>
-            <p className="mt-1.5 text-[10px] text-slate-400">
-              Demo image · sample observation, not a live report
-            </p>
           </li>
-
-          {/* Completed follow-up */}
-          <li className="relative pb-6">
-            <span
-              className="absolute -left-9 top-0 flex size-6 items-center justify-center bg-[#e2e6df] text-[#64766b] ring-4 ring-[#faf9f5]"
-              aria-hidden="true"
-            >
-              <Check className="size-3.5" strokeWidth={3} />
-            </span>
-
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="min-w-0 text-sm font-semibold leading-5 text-slate-900">
-                Water receded • follow-up
-              </h3>
-              <span className="shrink-0 px-2 py-1 text-[10px] font-semibold text-[#756b5b]">
-                Resident follow-up · sample
-              </span>
+          <li className="activity-step">
+            <span className="activity-marker activity-marker-recorded" aria-hidden="true"><Check /></span>
+            <div className="activity-step-content">
+              <div className="activity-step-title"><h4>Resident follow-up</h4><span>Sample update</span></div>
+              <div className="activity-step-meta"><Clock aria-hidden="true" />16 Nov · 14:20</div>
+              <p>A resident follow-up says the water returned to normal. No agency record confirms the work.</p>
             </div>
-
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
-              <span className="inline-flex items-center gap-1">
-                <Clock className="size-3" aria-hidden="true" />
-                16 Nov 2026 · 14:20
-              </span>
-            </div>
-
-            <p className="mt-2 text-xs leading-5 text-slate-500">
-              A resident follow-up says the water returned to normal. This
-              demo has no agency record to confirm the work.
-            </p>
           </li>
-
-          {/* Pending authority update */}
-          <li className="relative">
-            <span
-              className="absolute -left-9 top-0 size-6 border border-[#d7d4cc] bg-[#faf9f5] ring-4 ring-[#faf9f5]"
-              aria-hidden="true"
-            />
-
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="min-w-0 text-sm font-semibold leading-5 text-slate-900">
-                No authority update recorded
-              </h3>
-              <span className="shrink-0 px-2 py-1 text-[10px] font-semibold text-slate-500">
-                No update
-              </span>
+          <li className="activity-step activity-step-pending">
+            <span className="activity-marker activity-marker-pending" aria-hidden="true"><Clock /></span>
+            <div className="activity-step-content">
+              <div className="activity-step-title"><h4>Agency response</h4><span>No update</span></div>
+              <div className="activity-step-meta"><Clock aria-hidden="true" />Checked · 16 Nov · 16:00</div>
+              <p>No linked maintenance record. This does not confirm that no work has taken place.</p>
             </div>
-
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
-              <span className="inline-flex items-center gap-1">
-                <Clock className="size-3" aria-hidden="true" />
-                Last checked 16 Nov 2026 · 16:00
-              </span>
-            </div>
-
-            <p className="mt-2 text-xs leading-5 text-slate-500">
-              No official maintenance record is linked in this demo. That does
-              not confirm that no work has taken place.
-            </p>
           </li>
-        </ol>
-
-        {/* Community discussion */}
+          </ol>
+        </section>
         <section
           aria-labelledby="discussion-heading"
-          className="mt-6 border-t border-slate-100 pt-5"
+          className="timeline-discussion mt-0 flex min-h-0 flex-col border-t border-[#d7e1e1] pt-3"
         >
-          <div className="flex items-baseline justify-between gap-3">
+          <div className="flex shrink-0 items-center justify-between gap-3">
             <h3
               id="discussion-heading"
-              className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400"
+              className="text-base font-bold tracking-[-0.02em] text-[#203936]"
             >
-              Community discussion
+              {comments.reduce((total, comment) => total + 1 + (comment.replies?.reduce((replyTotal, reply) => replyTotal + 1 + (reply.replies?.length ?? 0), 0) ?? 0), 0)} comments
             </h3>
-            <span className="text-[11px] font-medium text-slate-400">
-              {COMMENT_COUNT} comments
-            </span>
+            <DropdownMenu.Root open={commentSortMenuOpen} onOpenChange={setCommentSortMenuOpen}>
+              <DropdownMenu.Trigger asChild>
+                <button type="button" className="feed-sort-trigger" aria-label={`Sort comments, currently ${commentSort}`}>
+                  {commentSort}<ChevronDown aria-hidden="true" />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content className="community-sort-menu" align="end" side="top" sideOffset={7}>
+                  <DropdownMenu.Label className="community-sort-label">Sort comments by</DropdownMenu.Label>
+                  <DropdownMenu.RadioGroup value={commentSort} onValueChange={(value) => { setCommentSort(value as typeof commentSort); setCommentSortMenuOpen(false); }}>
+                    {(["Relevance", "Top", "New"] as const).map((sort) => <DropdownMenu.RadioItem key={sort} value={sort} className="community-sort-option">
+                      <DropdownMenu.ItemIndicator><Check aria-hidden="true" /></DropdownMenu.ItemIndicator>{sort}
+                    </DropdownMenu.RadioItem>)}
+                  </DropdownMenu.RadioGroup>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
           </div>
 
           <form
-            onSubmit={(event) => event.preventDefault()}
-            className="mt-3 flex items-start gap-2.5"
+            onSubmit={handleCommentSubmit}
+            className="timeline-comment-form mt-2 flex shrink-0 items-start gap-2.5 rounded-2xl border border-[#d8e2e2] bg-white/65 p-3 shadow-[0_2px_8px_rgba(30,56,53,0.04)]"
           >
-            <span className="flex size-7 shrink-0 items-center justify-center bg-[#173f3a] text-[10px] font-bold text-white">
-              Y
-            </span>
+            <span className="flex size-7 shrink-0 items-center justify-center bg-[#173f3a] text-[10px] font-bold text-white">Y</span>
             <div className="min-w-0 flex-1">
-              <label htmlFor="timeline-comment" className="sr-only">
-                Add a comment
-              </label>
-              <input
+              <label htmlFor="timeline-comment" className="sr-only">Add a comment</label>
+              {replyingTo && <div className="mb-1 flex items-center justify-between text-[11px] text-[#536a67]">Replying to u/{replyingTo.author}<button type="button" onClick={() => setReplyingTo(null)} className="rounded px-1.5 py-0.5 font-semibold hover:bg-[#e7efef]">Cancel</button></div>}
+              <textarea
                 id="timeline-comment"
-                type="text"
-                placeholder="Add a comment…"
-                className="h-9 w-full border border-[#d7d4cc] bg-white/60 px-3.5 text-xs text-slate-800 outline-none transition placeholder:text-slate-500 focus:border-[#a58e67] focus:bg-white/80 focus:ring-2 focus:ring-[#a58e67]/15"
+                ref={commentInput}
+                rows={1}
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                maxLength={500}
+                placeholder={replyingTo ? `Reply to u/${replyingTo.author}…` : "Share a useful update…"}
+                className="min-h-12 w-full resize-y rounded-xl border border-[#d4e0e1] bg-white/75 px-3.5 py-2.5 text-[13px] leading-5 text-[#203936] outline-none transition placeholder:text-[#667b79] focus:border-[#56837d] focus:bg-white focus:ring-2 focus:ring-[#56837d]/20"
               />
-              <div className="mt-2 flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-[#173f3a] px-4 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#102f2b] active:scale-[0.98]"
-                >
-                  Post
-                </button>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <span className="text-[10px] text-[#536a67]" aria-live="polite">{posted ? "Added to this demo" : "Demo discussion · stays on this page"}</span>
+                <button type="submit" disabled={!draft.trim()} className="min-h-9 rounded-xl bg-[#173f3a] px-4 text-[11px] font-semibold text-white transition hover:bg-[#102f2b] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#7b918d]">Post</button>
               </div>
             </div>
           </form>
 
-          <ul className="mt-4 space-y-4">
-            {COMMENTS.map((comment) => (
-              <CommentThread key={comment.id} comment={comment} />
-            ))}
+          <ul aria-label="Comments" className="timeline-comment-list mt-3 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-2">
+            {sortedComments.map((comment) => <CommentThread key={comment.id} comment={comment} votes={votes} onVote={handleVote} onReply={handleReply} />)}
           </ul>
         </section>
+
+
       </div>
 
       {/* Budget source */}
-      <div className="shrink-0 border-t border-slate-100 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-0 md:pb-4">
+      <div className="shrink-0 border-t border-[#d7e1e1] px-5 py-4 sm:px-6">
         <Link
           href="/budget"
           className="group flex items-center justify-between gap-3 text-xs font-semibold text-slate-700 transition hover:text-[#53645e]"
@@ -401,6 +346,5 @@ export default function ObservationTimeline({
         </Link>
       </div>
     </section>
-    </>
   );
 }

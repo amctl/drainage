@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-21T00:00:00+05:30",
+  "title": "Design System: Groundwork",
+  "extensions": {
+    "colorMeta": {
+      "pine": {
+        "role": "primary",
+        "displayName": "Deep Pine",
+        "canonical": "#173F3A",
+        "tonalRamp": ["#102D29", "#173F3A", "#24564D", "#3D6E62", "#668B7E", "#91ADA2", "#C1D3CC", "#F0F6F3"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Deep Ink",
+        "canonical": "#172A27",
+        "tonalRamp": ["#142421", "#172A27", "#2B3D39", "#455550", "#667570", "#8D9995", "#BDC5C2", "#F2F4F3"]
+      },
+      "muted-ink": {
+        "role": "neutral",
+        "displayName": "Quiet Ink",
+        "canonical": "#53655F",
+        "tonalRamp": ["#263832", "#3C4F48", "#53655F", "#6E7E78", "#8A9892", "#A9B3AF", "#CBD1CE", "#F1F3F2"]
+      },
+      "map-ground": {
+        "role": "neutral",
+        "displayName": "Map Mist",
+        "canonical": "#E6EDEE",
+        "tonalRamp": ["#253538", "#415356", "#64777A", "#8FA0A2", "#B2BFC0", "#CCD6D7", "#DEE6E7", "#F5F8F8"]
+      },
+      "community-ground": {
+        "role": "neutral",
+        "displayName": "Community Mist",
+        "canonical": "#E9EFF0",
+        "tonalRamp": ["#27383A", "#45585A", "#6A7C7E", "#94A3A5", "#B8C4C5", "#D0DADB", "#E1E8E9", "#F7F9F9"]
+      },
+      "glass": {
+        "role": "neutral",
+        "displayName": "Frosted White",
+        "canonical": "rgb(249 252 252 / 0.85)",
+        "tonalRamp": ["#263333", "#425050", "#697676", "#95A1A1", "#BCC5C5", "#D9DFDF", "#EAF0F0", "#F9FCFC"]
+      },
+      "urgent": {
+        "role": "tertiary",
+        "displayName": "Urgent Rust",
+        "canonical": "#A95245",
+        "tonalRamp": ["#4D211C", "#74352D", "#A95245", "#BD7165", "#D09288", "#E0B5AE", "#EED5D1", "#FAF2F0"]
+      },
+      "underway": {
+        "role": "secondary",
+        "displayName": "Work Amber",
+        "canonical": "#987137",
+        "tonalRamp": ["#443018", "#694B25", "#987137", "#AE8B54", "#C4A979", "#D8C49F", "#E9DCC6", "#F8F4EC"]
+      },
+      "resolved": {
+        "role": "secondary",
+        "displayName": "Resolved Sage",
+        "canonical": "#457762",
+        "tonalRamp": ["#1E3A2F", "#2F5847", "#457762", "#65917D", "#89AC9A", "#B1C8BC", "#D1DFD8", "#F2F7F4"]
+      },
+      "warm-highlight": {
+        "role": "accent",
+        "displayName": "Warm Highlight",
+        "canonical": "#F2D28C",
+        "tonalRamp": ["#453613", "#70571F", "#A38335", "#C5A553", "#D9BD79", "#E7D19B", "#F0E1BB", "#FBF7EA"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Community heading", "purpose": "Names the active Community view." },
+      "title": { "displayName": "Report title", "purpose": "Leads selected reports and feed posts." },
+      "body": { "displayName": "Supporting text", "purpose": "Explains controls and report context." },
+      "label": { "displayName": "Civic metadata", "purpose": "Carries status, place, source, and time." },
+      "data": { "displayName": "Aligned data", "purpose": "Use for vote scores and compact values when alignment matters." }
+    },
+    "shadows": [
+      { "name": "floating-glass", "value": "0 14px 42px rgb(26 48 48 / 13%), 0 2px 6px rgb(26 48 48 / 5%), inset 0 1px 0 rgb(255 255 255 / 92%)", "purpose": "Separate controls and report context from the map." },
+      { "name": "report-rest", "value": "0 7px 20px rgb(28 48 44 / 5%), inset 0 1px 0 rgb(255 255 255 / 93%)", "purpose": "Give feed posts a subtle reading surface." },
+      { "name": "report-hover", "value": "0 11px 25px rgb(28 48 44 / 8%), inset 0 1px 0 #fff", "purpose": "Clarify a hovered post with a restrained lift." }
+    ],
+    "motion": [
+      { "name": "community-arrival", "value": "360ms cubic-bezier(.2, .78, .24, 1)", "purpose": "One soft blur-and-rise transition when opening the Community view." },
+      { "name": "control-feedback", "value": "150–180ms ease", "purpose": "Short color and elevation changes on controls and report cards." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "560px" },
+      { "name": "tablet", "value": "820px" },
+      { "name": "compact-desktop", "value": "1100px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Pine action for reporting or starting a civic task.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Report an issue</button>",
+      "css": ".ds-btn-primary { min-height: 42px; padding: 0 13px; border: 1px solid rgb(8 48 43 / 16%); border-radius: 12px; background: #173f3a; color: #fff; box-shadow: 0 5px 12px rgb(23 63 58 / 18%), inset 0 1px 0 rgb(255 255 255 / 13%); cursor: pointer; font: 700 11px/1.4 Geist, ui-sans-serif, system-ui, sans-serif; transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; } .ds-btn-primary:hover { background: #0d322d; box-shadow: 0 8px 18px rgb(23 63 58 / 22%), inset 0 1px 0 rgb(255 255 255 / 14%); transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 3px solid rgb(23 63 58 / 50%); outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(0); }"
+    },
+    {
+      "name": "Search field",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Search reports and places while keeping the map visible beneath it.",
+      "html": "<label class=\"ds-search\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"10.8\" cy=\"10.8\" r=\"6.8\"></circle><path d=\"m16 16 4.5 4.5\"></path></svg><input aria-label=\"Search streets or reports\" placeholder=\"Search streets or reports\"></label>",
+      "css": ".ds-search { display: flex; min-height: 42px; align-items: center; gap: 9px; padding: 0 11px; border: 1px solid #fff; border-radius: 13px; background: rgb(255 255 255 / 62%); color: #172a27; box-shadow: inset 0 1px 3px rgb(29 54 49 / 4%); } .ds-search svg { width: 17px; height: 17px; flex: none; fill: none; stroke: #5b6b66; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; } .ds-search input { min-width: 0; border: 0; outline: 0; background: transparent; color: #172a27; font: 400 12px/1.5 Geist, ui-sans-serif, system-ui, sans-serif; } .ds-search input::placeholder { color: #65736f; opacity: 1; } .ds-search:focus-within { border-color: rgb(23 63 58 / 25%); background: #fff; box-shadow: 0 0 0 3px rgb(23 63 58 / 8%); } .ds-search:focus-within input:focus-visible { outline: 0; }"
+    },
+    {
+      "name": "View navigation",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "Switches between the map-first view and its community feed.",
+      "html": "<nav class=\"ds-views\" aria-label=\"Primary view\"><button type=\"button\" aria-pressed=\"true\">Map</button><button type=\"button\" aria-pressed=\"false\">Community</button></nav>",
+      "css": ".ds-views { display: flex; gap: 3px; padding: 4px; border: 1px solid rgb(37 60 55 / 8%); border-radius: 13px; background: rgb(35 59 54 / 5%); } .ds-views button { min-height: 38px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; color: #43544f; cursor: pointer; font: 650 12px/1.4 Geist, ui-sans-serif, system-ui, sans-serif; } .ds-views button:hover { background: rgb(255 255 255 / 58%); color: #173f3a; } .ds-views button[aria-pressed=\"true\"] { background: #fff; color: #173f3a; box-shadow: 0 2px 7px rgb(30 48 43 / 12%), inset 0 1px 0 #fff; } .ds-views button:focus-visible { outline: 3px solid rgb(23 63 58 / 50%); outline-offset: 2px; }"
+    },
+    {
+      "name": "Community post",
+      "kind": "card",
+      "refersTo": "report-card",
+      "description": "Places the vote rail beside a clear, source-aware report.",
+      "html": "<article class=\"ds-post\"><div class=\"ds-votes\"><button aria-label=\"Upvote\">↑</button><strong>128</strong><button aria-label=\"Downvote\">↓</button></div><div><small>r/Delhi · Resident report · 12 min ago</small><h2>Water backing up at the market crossing</h2><p>Connaught Place · Ward 79</p></div></article>",
+      "css": ".ds-post { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 13px; padding: 16px; border: 1px solid rgb(255 255 255 / 90%); border-radius: 16px; background: rgb(250 252 251 / 77%); color: #172a27; box-shadow: 0 7px 20px rgb(28 48 44 / 5%), inset 0 1px 0 rgb(255 255 255 / 93%); transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; } .ds-post:hover { border-color: #fff; background: rgb(255 255 255 / 94%); box-shadow: 0 11px 25px rgb(28 48 44 / 8%), inset 0 1px 0 #fff; transform: translateY(-1px); } .ds-post small { color: #53655f; font: 550 10px/1.4 Geist, ui-sans-serif, system-ui, sans-serif; } .ds-post h2 { margin: 8px 0 0; color: #192f2a; font: 740 15px/1.4 Geist, ui-sans-serif, system-ui, sans-serif; letter-spacing: -.018em; } .ds-post p { margin: 6px 0 0; color: #4d6059; font: 400 10px/1.5 Geist, ui-sans-serif, system-ui, sans-serif; } .ds-votes { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 0; border-radius: 12px; background: rgb(23 63 58 / 5%); color: #24473f; } .ds-votes button { width: 32px; height: 27px; border: 0; border-radius: 8px; background: transparent; color: #53655f; cursor: pointer; } .ds-votes button:hover { background: #fff; color: #765a2e; } .ds-votes button:focus-visible { outline: 2px solid #173f3a; outline-offset: 1px; }"
+    },
+    {
+      "name": "Status label",
+      "kind": "chip",
+      "refersTo": "status-indicator",
+      "description": "Pairs a semantic report-state dot with its readable label.",
+      "html": "<span class=\"ds-status\"><i></i>Needs attention</span>",
+      "css": ".ds-status { display: inline-flex; align-items: center; gap: 7px; color: #43544f; font: 680 10px/1.4 Geist, ui-sans-serif, system-ui, sans-serif; } .ds-status i { width: 8px; height: 8px; flex: none; border-radius: 50%; background: #a95245; }"
+    },
+    {
+      "name": "Map context",
+      "kind": "custom",
+      "refersTo": "report-card",
+      "description": "Frosted summary for the report selected on the map.",
+      "html": "<aside class=\"ds-context\"><small>Needs attention · Waterlogging</small><h2>Water backing up at the market crossing</h2><p>Connaught Place · Ward 79 · 12 min ago</p><button type=\"button\">View in community</button></aside>",
+      "css": ".ds-context { max-width: 410px; padding: 16px 17px 14px; border: 1px solid rgb(255 255 255 / 88%); border-radius: 17px; background: rgb(249 252 252 / 85%); color: #172a27; -webkit-backdrop-filter: blur(28px) saturate(150%); backdrop-filter: blur(28px) saturate(150%); box-shadow: 0 16px 42px rgb(26 48 48 / 14%), 0 2px 6px rgb(26 48 48 / 5%), inset 0 1px 0 rgb(255 255 255 / 92%); } .ds-context small { color: #43544f; font: 700 10px/1.4 Geist, ui-sans-serif, system-ui, sans-serif; } .ds-context h2 { margin: 10px 0 0; color: #173f3a; font: 760 17px/1.3 Geist, ui-sans-serif, system-ui, sans-serif; letter-spacing: -.025em; } .ds-context p { margin: 8px 0 0; color: #485a54; font: 550 10px/1.45 Geist, ui-sans-serif, system-ui, sans-serif; } .ds-context button { min-height: 34px; margin-top: 12px; padding: 0 10px; border: 0; border-radius: 9px; background: rgb(23 63 58 / 8%); color: #173f3a; cursor: pointer; font: 700 10px/1.4 Geist, ui-sans-serif, system-ui, sans-serif; } .ds-context button:hover { background: rgb(23 63 58 / 13%); } .ds-context button:focus-visible { outline: 3px solid rgb(23 63 58 / 50%); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "A City, Held in Glass",
+    "overview": "Groundwork uses clear frosted surfaces to keep civic tools readable over a living map. Cool city fields and deep pine controls make the interface feel calm and precise; report-state colors carry urgent meaning. Glass is structural: it separates search, navigation, and report details from the map beneath them. The Community view gives residents a familiar social reading pattern with voting, sort controls, discussion counts, and contributor context. Its cards stay crisp rather than blurred so status, source, place, and time remain easy to scan.",
+    "keyCharacteristics": ["The map is the primary surface; Community is a distinct second view.", "Translucent glass groups controls and selected-report context over geography.", "Deep pine anchors actions; status colors are semantic and always paired with labels.", "Community posts use a clear vote rail and compact civic metadata."],
+    "rules": [
+      { "name": "The Status Is Text Rule", "body": "A status color always appears with its written status; color never carries report meaning alone.", "section": "colors" },
+      { "name": "The Glass Has a Job Rule", "body": "Use blur where an interface surface overlays the map or groups controls. Keep report text and evidence crisp.", "section": "elevation" },
+      { "name": "The Scan Before Style Rule", "body": "Report titles and status lead; community and timing metadata follow in a quieter voice.", "section": "typography" },
+      { "name": "The Readable Layer Rule", "body": "The more text a surface carries, the more opaque its background becomes.", "section": "elevation" }
+    ],
+    "dos": ["Do keep the map as the first view and Community as a separate second view.", "Do use glass for controls that float over map geography.", "Do pair status color with a readable status label.", "Do keep demo and sample disclosures visible in report content.", "Do preserve keyboard focus, reduced-motion support, and comfortable touch targets."],
+    "donts": ["Don't place the full report feed over the map by default.", "Don't blur report titles, source details, or evidence.", "Don't use status color as the only signal of a report's state.", "Don't style sample data as a verified live civic record."]
+  }
+}

@@ -111,7 +111,7 @@ export default function BudgetPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-[#fffdf7] font-sans text-slate-900">
+    <div className="budget-page min-h-dvh font-sans text-slate-900">
       <div className="mx-auto w-full max-w-6xl px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 md:py-10">
         {/* Header */}
         <header>
