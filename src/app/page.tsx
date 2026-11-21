@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import ObservationTimeline from "@/components/ObservationTimeline";
 import ReportModal from "@/components/ReportModal";
+import UserNav from "@/components/UserNav";
 
 type Area = "Central Delhi" | "South Delhi" | "West Delhi" | "North Delhi";
 type Report = {
@@ -78,7 +79,10 @@ export default function Home() {
   const selectedReport = REPORTS.find((report) => report.id === selectedId);
 
   useEffect(() => {
-    if (selectedId && !visibleReports.some((report) => report.id === selectedId)) setSelectedId(null);
+    if (selectedId && !visibleReports.some((report) => report.id === selectedId)) {
+      const timer = setTimeout(() => setSelectedId(null), 0);
+      return () => clearTimeout(timer);
+    }
   }, [selectedId, visibleReports]);
 
   useEffect(() => {
@@ -188,6 +192,7 @@ export default function Home() {
         <div className="header-actions">
           <Link href="/budget" className="budget-link"><span>Budget</span><ExternalLink aria-hidden="true" /></Link>
           <button type="button" onClick={() => setReportOpen(true)} className="report-action"><Camera aria-hidden="true" /><span>Report an issue</span></button>
+          <UserNav />
           <span className="demo-pill">DEMO · not verified</span>
         </div>
       </header>
