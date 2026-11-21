@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap');
+
+html,body { min-height: 100vh; }
+@import 'tailwindcss';
+
+/* Mapbox GL needs a definite-size container before it creates its canvas. */
+.mapbox-container,
+.mapbox-container.mapboxgl-map {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.mapbox-container .mapboxgl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@theme {
+  --font-sans: 'DM Sans', sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
+  --breakpoint-md: 50rem;
+}
+
+/* Page and panel entrances.
+   Each direction matches where the element lives: content rises in place,
+   side panels drift in from the edge they are anchored to. */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes drift-left {
+  from { opacity: 0; transform: translateX(-14px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes drift-right {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Bottom-anchored sheets (mobile report card, toast). */
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Modals grow from the centre and shrink back into it. */
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(12px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dialog-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(8px) scale(.98); }
+}
+
+@keyframes grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes confirm {
+  0% { transform: scale(.85); }
+  65% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Loading placeholders sweep instead of blinking. */
+@keyframes shimmer {
+  from { background-position: -150% 0; }
+  to { background-position: 250% 0; }
+}
