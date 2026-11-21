@@ -42,8 +42,10 @@ const EVIDENCE_LANES: Lane[] = [
   },
 ];
 
-const LANE_CLASS =
-  "group flex w-full items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40 active:scale-[0.99] md:py-3";
+const /* Glass lanes: contextual evidence panels over map geography.
+   Readable Layer: more descriptive lanes get slightly more opaque backgrounds. */
+LANE_CLASS =
+  "group flex w-full items-center gap-3 rounded-xl border border-slate-200/70 bg-white/90 px-3 py-2.5 text-left shadow-sm transition hover:border-[var(--pine)] hover:bg-[var(--pine)]/20 active:scale-[0.99] md:py-3";
 
 function LaneContent({ lane }: { lane: Lane }) {
   const Icon = lane.icon;
@@ -158,7 +160,7 @@ export default function MapBottomSheet({
           <button
             type="button"
             onClick={onReportIssue}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.99]"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--pine)] text-sm font-semibold text-white transition hover:bg-[#0d322d] active:scale-[0.99]"
           >
             <Megaphone className="size-5" strokeWidth={2.2} />
             Report an issue

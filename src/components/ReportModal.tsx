@@ -187,7 +187,7 @@ export default function ReportModal({ onClose }: ReportModalProps) {
         tabIndex={-1}
         aria-hidden="true"
         onClick={requestClose}
-        className={`absolute inset-0 bg-[#173f3a]/55 ${
+        className={`absolute inset-0 bg-transparent ${
           closing ? "animate-overlay-out" : "animate-overlay-in"
         }`}
       />
@@ -208,7 +208,7 @@ export default function ReportModal({ onClose }: ReportModalProps) {
         {/* Header */}
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#e4dfd1] px-5 py-4">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center bg-[#173f3a] text-[#f2b544]">
+            <span className="flex size-9 shrink-0 items-center justify-center bg-[var(--pine)] text-[var(--warm-highlight)]">
               <Camera className="size-4.5" strokeWidth={2.2} />
             </span>
             <div className="min-w-0">
@@ -231,7 +231,7 @@ export default function ReportModal({ onClose }: ReportModalProps) {
             type="button"
             onClick={requestClose}
             aria-label="Close report dialog"
-            className="flex size-8 shrink-0 items-center justify-center text-slate-500 transition hover:bg-[#f3efe5] hover:text-[#173f3a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a58e67]"
+            className="flex size-8 shrink-0 items-center justify-center text-slate-500 transition hover:bg-[var(--glass)] hover:text-[#173f3a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a58e67]"
           >
             <X className="size-4" strokeWidth={2.2} />
           </button>
@@ -249,7 +249,7 @@ export default function ReportModal({ onClose }: ReportModalProps) {
           />
 
           {preview ? (
-            <div className="overflow-hidden border border-[#d7d0c0] bg-[#f3efe5]">
+            <div className="overflow-hidden border border-[#d7d0c0] bg-[var(--glass)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={preview}
@@ -258,7 +258,7 @@ export default function ReportModal({ onClose }: ReportModalProps) {
               />
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-2 bg-[#303b34]/[.045] px-4 py-8 text-center">
+            <div className="flex flex-col items-center justify-center gap-2 bg-[rgb(250_252_251_/._94%)] px-4 py-8 text-center">
               <span className="flex size-12 items-center justify-center bg-[#e9e6df] text-[#65766f]">
                 <Camera className="size-6" strokeWidth={1.8} />
               </span>
@@ -273,7 +273,7 @@ export default function ReportModal({ onClose }: ReportModalProps) {
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={phase === "verifying"}
-            className="mt-3 flex h-11 w-full items-center justify-center gap-2 bg-[#173f3a] text-sm font-semibold text-white transition hover:bg-[#102f2b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b09b73] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+            className="mt-3 flex h-11 w-full items-center justify-center gap-2 bg-[var(--pine)] text-sm font-semibold text-white transition hover:bg-[#0d322b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b09b73] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
           >
             <Camera className="size-4.5" strokeWidth={2.2} />
             {preview ? "Retake photo" : "Take or choose a photo"}
@@ -327,7 +327,7 @@ export default function ReportModal({ onClose }: ReportModalProps) {
               type="button"
               onClick={() => setSubmitted(true)}
               disabled={submitted}
-              className="flex h-11 w-full items-center justify-center gap-2 bg-[#53645e] text-sm font-semibold text-white transition hover:bg-[#3e4d47] disabled:cursor-default disabled:bg-[#65766f]"
+              className="flex h-11 w-full items-center justify-center gap-2 bg-[var(--resolved)] text-sm font-semibold text-white transition hover:bg-[#3e4d47] disabled:cursor-default disabled:bg-[#65766f]"
             >
               {submitted ? (
                 <>
