@@ -32,6 +32,31 @@
   box-shadow: 0 32px 96px rgba(17, 42, 39, 0.25), inset 0 1px 0 rgb(255 255 255 / 92%);
 }
 
+/* Map first: glass is reserved for controls that must stay readable over geography. */
+.groundwork-shell {
+  --ink: #172a27;
+  --pine: #173f3a;
+  --muted: #53655f;
+  --line: rgb(28 55 49 / 12%);
+  --glass: rgb(250 252 251 / 82%);
+  position: relative;
+  min-height: 100dvh;
+  color: var(--ink);
+  background: #e6edee;
+  isolation: isolate;
+}
+
+.groundwork-shell.view-map {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.groundwork-shell.view-community {
+  height: 100dvh;
+  overflow: hidden;
+  background: #e9eff0;
+}
+
 /* Floating glass masthead over map geography.
    Status Is Text Rule: status color always paired with label. */
 .groundwork-header {
