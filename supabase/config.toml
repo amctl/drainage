@@ -1,0 +1,4 @@
+[functions.process-pothole-followups]
+# The function validates the default secret API key with @supabase/server.
+# Supabase's legacy gateway JWT check must be off for the new sb_secret key.
+verify_jwt = false

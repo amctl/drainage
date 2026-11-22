@@ -17,6 +17,16 @@ html,body { min-height: 100vh; }
   height: 100% !important;
 }
 
+@media (max-width: 639px) {
+  .mapboxgl-ctrl-bottom-right { margin-bottom: 4.5rem !important; }
+  .mapboxgl-ctrl-group { border-radius: 12px !important; overflow: hidden; }
+  .mapboxgl-ctrl-group button { width: 40px !important; height: 40px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+}
+
 @theme {
   --font-sans: 'DM Sans', sans-serif;
   --font-serif: 'Lora', Georgia, serif;

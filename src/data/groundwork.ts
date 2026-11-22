@@ -98,3 +98,162 @@ export async function createSourceLink(input: { zone: string; label: string; url
   const auth = await session(); const rows = await request('/rest/v1/source_links', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ zone: input.zone, label: input.label.trim(), url: parsed.href }) }, auth.access_token) as any[]
   return { id: Number(rows[0].id), zone: rows[0].zone, label: rows[0].label, url: rows[0].url } as SourceLink
 }
+
+export type PotholeStatus = 'pending' | 'active' | 'fixed'
+export type PotholeResponseValue = 'exists' | 'fixed' | 'cannot_find'
+export type PotholeReport = {
+  id: number
+  description: string
+  lat: number
+  lng: number
+  hasPhoto: boolean
+  status: PotholeStatus
+  createdAt: string
+  lastCheckedAt?: string
+  nextCheckAt?: string
+  currentCheckCycle: number
+  nextCheckCycle: number
+  resolvedAt?: string
+  confirmations: number
+  cannotFind: number
+  stillHere: number
+  fixedThisCheckin: number
+  fixedResponses: number
+}
+export type PushSubscriptionRecord = { endpoint: string; p256dh: string; auth: string; lat: number; lng: number }
+
+function pothole(row: any): PotholeReport {
+  return {
+    id: Number(row.id), description: String(row.description), lat: Number(row.lat), lng: Number(row.lng),
+    hasPhoto: row.has_photo === true, status: row.status as PotholeStatus, createdAt: row.created_at,
+    lastCheckedAt: row.last_checked_at || undefined, nextCheckAt: row.next_check_at || undefined,
+    currentCheckCycle: Number(row.current_check_cycle || 0), nextCheckCycle: Number(row.next_check_cycle || 1),
+    resolvedAt: row.resolved_at || undefined, confirmations: Number(row.confirmation_count || 0),
+    cannotFind: Number(row.cannot_find_count || 0), stillHere: Number(row.still_here_count || 0),
+    fixedThisCheckin: Number(row.fixed_this_checkin_count || 0),
+    fixedResponses: Number(row.fixed_response_count || 0),
+  }
+}
+
+export async function loadPotholes(): Promise<PotholeReport[]> {
+  if (!isSupabaseConfigured()) fail('Supabase is not configured. Add the Supabase project URL and publishable key.')
+  const rows = await request('/rest/v1/pothole_summaries?select=*&order=created_at.desc') as any[]
+  return rows.map(pothole)
+}
+
+export async function loadFixActivity(windowDays = 90): Promise<PotholeReport[]> {
+  if (!Number.isInteger(windowDays) || windowDays < 1 || windowDays > 365) fail('Choose a fix activity window between 1 and 365 days.')
+  if (!isSupabaseConfigured()) fail('Supabase is not configured. Add the Supabase project URL and publishable key.')
+  const since = new Date(Date.now() - windowDays * 86_400_000).toISOString()
+  const rows = await request(`/rest/v1/pothole_summaries?select=*&status=eq.fixed&resolved_at=gte.${encodeURIComponent(since)}&order=resolved_at.desc`) as any[]
+  return rows.map(pothole)
+}
+
+export async function createPothole(input: { description: string; lat: number; lng: number; photoPath?: string }) {
+  const description = input.description.trim()
+  if (description.length < 3 || description.length > 500) fail('Describe the pothole in 3 to 500 characters.')
+  if (!Number.isFinite(input.lat) || input.lat < -90 || input.lat > 90 || !Number.isFinite(input.lng) || input.lng < -180 || input.lng > 180) fail('Choose a valid location on the map.')
+  const auth = await session()
+  const columns = 'id,description,lat,lng,status,created_at,last_checked_at,next_check_at,current_check_cycle,next_check_cycle,resolved_at'
+  const rows = await request(`/rest/v1/pothole_reports?select=${columns}`, {
+    method: 'POST', headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({ description, lat: input.lat, lng: input.lng, photo_path: input.photoPath || null }),
+  }, auth.access_token) as any[]
+  return pothole({ ...rows[0], has_photo: Boolean(input.photoPath) })
+}
+
+export async function respondToPothole(reportId: number, cycle: number, response: PotholeResponseValue) {
+  if (!Number.isInteger(reportId) || reportId <= 0 || !Number.isInteger(cycle) || cycle < 0) fail('This pothole check-in is no longer valid.')
+  if (cycle === 0 && response === 'fixed') fail('A new report needs an existence confirmation, not a repair confirmation.')
+  const auth = await session()
+  const rows = await request('/rest/v1/pothole_responses?on_conflict=report_id,user_id,cycle&select=id,report_id,cycle,response,created_at', {
+    method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+    body: JSON.stringify({ report_id: reportId, cycle, response }),
+  }, auth.access_token) as any[]
+  return rows[0]
+}
+
+export async function savePushSubscription(input: PushSubscriptionRecord) {
+  if (!input.endpoint.startsWith('https://') || !input.p256dh || !input.auth) fail('The browser returned an incomplete push subscription.')
+  if (!Number.isFinite(input.lat) || !Number.isFinite(input.lng)) fail('Choose a location to receive nearby alerts.')
+  const auth = await session()
+  await request('/rest/v1/push_subscriptions?on_conflict=endpoint', {
+    method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' },
+    body: JSON.stringify({ ...input, active: true, updated_at: new Date().toISOString() }),
+  }, auth.access_token)
+}
+
+export async function removePushSubscription(endpoint: string) {
+  const auth = await session()
+  await request(`/rest/v1/push_subscriptions?endpoint=eq.${encodeURIComponent(endpoint)}`, { method: 'DELETE' }, auth.access_token)
+}
+
+export async function notifyNearbyReport(reportId: number): Promise<{ delivered: number; eligible: number }> {
+  if (!Number.isInteger(reportId) || reportId <= 0 || !url || !key) fail('Nearby alerts need a configured Supabase project.')
+  const auth = await session()
+  const response = await fetch(`${url}/functions/v1/notify-nearby-report`, {
+    method: 'POST',
+    headers: { apikey: key, Authorization: `Bearer ${auth.access_token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ report_id: reportId }),
+  })
+  if (!response.ok) {
+    const body = await response.text()
+    fail(body || `Nearby notification dispatch failed (${response.status}).`)
+  }
+  return await response.json() as { delivered: number; eligible: number }
+}
+
+const photoBucket = 'pothole-photos'
+const photoLimit = 8 * 1024 * 1024
+const photoTypes: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
+
+export async function uploadPotholePhoto(file: File) {
+  const extension = photoTypes[file.type]
+  if (!extension || file.size === 0 || file.size > photoLimit) fail('Choose a JPEG, PNG, or WebP image under 8 MB.')
+  if (!url || !key) fail('Photo uploads need a configured Supabase project.')
+  const auth = await session()
+  let userId = ''
+  try {
+    const encoded = auth.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    userId = String(JSON.parse(atob(encoded.padEnd(Math.ceil(encoded.length / 4) * 4, '='))).sub || '')
+  } catch { fail('Could not verify the upload session. Sign in again and retry.') }
+  if (!userId) fail('Could not verify the upload session. Sign in again and retry.')
+  const path = `${userId}/${crypto.randomUUID()}.${extension}`
+  const response = await fetch(`${url}/storage/v1/object/${photoBucket}/${path}`, {
+    method: 'POST',
+    headers: { apikey: key, Authorization: `Bearer ${auth.access_token}`, 'Content-Type': file.type, 'x-upsert': 'false' },
+    body: file,
+  })
+  if (!response.ok) {
+    const body = await response.text()
+    fail(body || `Photo upload failed (${response.status}).`)
+  }
+  return path
+}
+
+export async function deletePotholePhoto(path: string) {
+  if (!url || !key) return
+  const auth = await session()
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/')
+  const response = await fetch(`${url}/storage/v1/object/${photoBucket}/${encodedPath}`, {
+    method: 'DELETE', headers: { apikey: key, Authorization: `Bearer ${auth.access_token}` },
+  })
+  if (!response.ok) throw new Error(`Unused photo could not be removed (${response.status}).`)
+}
+
+export async function loadPotholePhoto(reportId: number): Promise<string> {
+  if (!Number.isInteger(reportId) || reportId <= 0 || !url || !key) fail('Photo is not available.')
+  const auth = await session()
+  const response = await fetch(`${url}/functions/v1/pothole-photo-url`, {
+    method: 'POST',
+    headers: { apikey: key, Authorization: `Bearer ${auth.access_token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ report_id: reportId }),
+  })
+  if (!response.ok) {
+    const body = await response.text()
+    fail(body || `Photo preview unavailable (${response.status}).`)
+  }
+  const result = await response.json() as { signed_url?: string }
+  if (!result.signed_url) fail('Photo preview unavailable.')
+  return result.signed_url
+}
